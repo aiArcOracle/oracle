@@ -24,6 +24,8 @@ impl TogetherAIProvider {
             "model": "DeepSeek-R1",
             "messages": [{"role": "user", "content": prompt}],
             "stream": stream,
+            "max_tokens": 200,
+            "temperature": 0.7,
         });
 
         let response = self.client
@@ -45,7 +47,6 @@ impl TogetherAIProvider {
                         break;
                     }
                     let json_data: serde_json::Value = serde_json::from_str(data)?;
-
                     if let Some(delta) = json_data["choices"][0]["delta"]["content"].as_str() {
                         full_response.push_str(delta);
                     }
@@ -54,10 +55,11 @@ impl TogetherAIProvider {
             Ok(full_response)
         } else {
             let response_text = response.text().await?;
-
             let response_json: serde_json::Value = serde_json::from_str(&response_text)?;
-
-            let content = response_json["choices"][0]["message"]["content"].as_str().unwrap_or_default().to_string();
+            let content = response_json["choices"][0]["message"]["content"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string();
             Ok(content)
         }
     }
@@ -77,5 +79,25 @@ impl Provider for TogetherAIProvider {
         Ok(CompletionResponse {
             text: response_text,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio;
+
+    #[tokio::test]
+    async fn test_together_ai_completion() {
+        let api_key = "your_together_ai_api_key".to_string(); // Replace with a valid key for testing
+        let provider = TogetherAIProvider::new(api_key);
+        let prompt = "Analyze Solana price at $68,420.69. Provide a concise insight.";
+        let request = CompletionRequest {
+            prompt: prompt.to_string(),
+            stream: false,
+            ..Default::default()
+        };
+        let response = provider.complete(request).await.unwrap();
+        assert!(!response.text.is_empty());
     }
 }
