@@ -1,27 +1,20 @@
 use rig::{
-    completion::Prompt,
-    providers::{openai, gemini},
+    completion::{CompletionRequest, CompletionResponse, ProviderResult},
+    providers::{Provider},
 };
+use std::error::Error;
 
 pub struct ArcOracleAgent {
-    openai_client: openai::Client,
-    gemini_client: gemini::Client,
+    provider: Box<dyn Provider>,
 }
 
 impl ArcOracleAgent {
-    pub async fn new(openai_client: &openai::Client, gemini_client: &gemini::Client) -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(ArcOracleAgent {
-            openai_client: openai_client.clone(),
-            gemini_client: gemini_client.clone(),
-        })
+    pub async fn new(together_api_key: String) -> Result<Self, Box<dyn Error>> {
+        let provider = Box::new(super::together_ai::TogetherAIProvider::new(together_api_key));
+        Ok(ArcOracleAgent { provider })
     }
 
-    pub async fn complete(&self, prompt: Prompt) -> Result<rig::completion::Response, Box<dyn std::error::Error>> {
-        let agent = self.openai_client
-            .agent(openai::completion::GPT_4_TURBO)
-            .preamble("You are ArcOracle, an AI agent providing real-time data insights for Solana. Be concise and accurate.")
-            .temperature(0.7)
-            .build();
-        agent.complete(prompt).await
+    pub async fn complete(&self, request: CompletionRequest) -> ProviderResult<CompletionResponse> {
+        self.provider.complete(request).await
     }
 }

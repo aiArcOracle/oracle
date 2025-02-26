@@ -1,13 +1,7 @@
-use arcoracle_backend::{
-    data::fetch_data_from_arcdotfun,
-    llm::ArcOracleAgent,
-    solana::store_data_on_solana,
-    vector::VectorStore,
-};
+use arcoracle_backend::data::{fetch_data_from_arcdotfun, SolanaData};
 use rig::{
-    completion::Prompt,
-    providers::{openai, gemini},
-    vector_stores::lancedb::LanceDB,
+    completion::{Prompt, CompletionRequest, CompletionResponse},
+    providers::{Provider, ProviderError, ProviderResult},
 };
 use solana_sdk::{pubkey::Pubkey, signer::keypair::Keypair};
 use std::env;
@@ -15,13 +9,9 @@ use std::env;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
-    let openai_api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let gemini_api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
+    let together_api_key = env::var("TOGETHER_API_KEY").expect("TOGETHER_API_KEY must be set");
 
-    let openai_client = openai::Client::new(openai_api_key);
-    let gemini_client = gemini::Client::from_env();
-
-    let agent = ArcOracleAgent::new(&openai_client, &gemini_client).await?;
+    let agent = ArcOracleAgent::new(together_api_key).await?;
     let vector_store = VectorStore::new().await?;
 
     let data_source = fetch_data_from_arcdotfun().await?;
@@ -33,7 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Analyze this Solana price data: {}. Provide a concise insight for DeFi users.",
         solana_price
     ));
-    let response = agent.complete(prompt).await?;
+    let request = CompletionRequest {
+        prompt,
+        stream: false,  // Non-streaming by default, can be changed to true for streaming
+        ..Default::default()
+    };
+    let response = agent.complete(request).await?;
     println!("ArcOracle Insight: {}", response.text);
 
     let keypair = Keypair::new();
