@@ -140,7 +140,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **GitHub**: [https://github.com/aiArcOracle/oracle](https://github.com/aiArcOracle/oracle)
 - **Twitter**: [https://x.com/aiArcOracle](https://x.com/aiArcOracle)
-- **Discord**: Join our community at [ArcOracle Discord](https://discord.gg/arcoracle) for discussions and support.
-- **Email**: Contact us at `contact@arcoracle.io` for inquiries.
 
 Unveil the Cosmos of Data with ArcOracle—built on Solana and @arcdotfun, driving the future of Web3 oracles!
